@@ -5,7 +5,7 @@ services:
       - "8080:80"
     volumes:
       - ./config/default.conf:/etc/nginx/conf.d/default.conf
-      - ./src/:/usr/share/nginx/html
+      - ./src/:/app
     depends_on:
       - script
     networks:
@@ -14,18 +14,25 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: php:fpm-mysqli
     volumes:
       - ./src/:/var/www/html
     networks:
       - ETAPE3_RESEAU
     depends_on:
-      - DATA
+      DATA:
+        condition: service_healthy
   DATA:
     image: mariadb
     volumes:
       - ./database:/docker-entrypoint-initdb.d
     environment:
       MARIADB_RANDOM_ROOT_PASSWORD: 1234
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     networks:
       - ETAPE3_RESEAU
 
